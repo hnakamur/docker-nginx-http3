@@ -151,7 +151,10 @@ RUN GPG_KEYS=B0F4253373F8F6F510D42178520A9993A1C052F8 \
   && rm -rf /usr/src/nginx-$NGINX_VERSION \
   && rm -rf /usr/src/ngx_brotli \
   && rm -rf /usr/src/headers-more-nginx-module \
-  && rm -rf /usr/src/quiche \
+  \
+  # Build quiche example http3-client
+  && cd /usr/src/quiche \
+  && cargo build --release --example http3-client \
   \
   # Bring in gettext so we can get `envsubst`, then throw
   # the rest away. To do this, we need to install `gettext`
@@ -173,6 +176,7 @@ RUN GPG_KEYS=B0F4253373F8F6F510D42178520A9993A1C052F8 \
   && apk del .gettext \
   && mv /tmp/envsubst /usr/local/bin/
 
+
 # Create self-signed certificate
 RUN apk add openssl \
   && openssl req -x509 -newkey rsa:4096 -nodes -keyout /etc/ssl/private/localhost.key -out /etc/ssl/localhost.pem -days 365 -sha256 -subj '/CN=localhost'
@@ -187,6 +191,7 @@ COPY --from=builder /etc/nginx/* /etc/nginx/
 COPY --from=builder /usr/local/bin/envsubst /usr/local/bin/
 COPY --from=builder /etc/ssl/private/localhost.key /etc/ssl/private/
 COPY --from=builder /etc/ssl/localhost.pem /etc/ssl/
+COPY --from=builder /usr/src/quiche/target/release/examples/http3-client /usr/bin/
 
 RUN \
   # Bring in tzdata so users could set the timezones through the environment
